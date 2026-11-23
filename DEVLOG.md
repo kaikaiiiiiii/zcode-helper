@@ -1,3 +1,23 @@
+## 轮次 37：ZCode 4.0.0 升级检查（2026-11-24 00:50）
+
+3.19.1 → **4.0.0.10870**（更新器自动下载安装；3.19.1 的 exe 在待更新期间已无法启动，所以没能补存 3.19 全量快照）。
+
+结果：**选择器零漂移**。
+
+1. 冒烟 `npm run smoke:dom --panel`：**21/21 通过**——输入框、会话列表（15 个）、附件行、chat-loading、
+   workspace、项目展开、新会话判定、侧栏（490px）、模型触发器（`haspopup=dialog`）、额度横幅、probeModel、
+   settingsBack、模型面板（`composer-model-panel`，10 项）、供应商列表（悬停/点击都能出）、「管理模型」按钮，全部可用。
+2. 端到端真实发送：目标会话 `sess_ba290359`（触发器为「选择模型」）→
+   `session-switch → model-refresh → model-cache-hit(OpenCode Go / glm-5.3-flash) → sent → session-started`，
+   队列状态 `sent`，`idleGuardSeconds` 临时调 0 后又恢复为 5。
+3. 快照：`npm run snapshot:dom -- --tag 4.0.0` → `logs/dom/snap-4.0.0-2026-11-23T16-43-16-719Z.json`（232 KB），
+   含 composer / sidebar / 15 条会话 / 模型面板 / 供应商面板 / 设置页 HTML 与适配层各表达式返回。
+4. 测试：单元 61、DOM 74 全绿（夹具未改）。
+5. 小观察：4.0 的模型触发器文案可能同时拼出「glm-5.3-flash 最高 选择模型」这种过渡文本；
+   判定早已改为只看 `data-model-current-value`，因此不受影响。
+
+结论：4.0 可直接用，无需改适配层。
+
 ## 轮次 36：改名与发布准备（2026-11-23 21:00，v0.5.34）
 
 按"界面显示的品牌一律 ZCode / ZCode Helper"统一：
