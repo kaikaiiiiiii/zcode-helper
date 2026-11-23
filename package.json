@@ -24,7 +24,8 @@
     "build": "electron-builder --win",
     "build:dir": "electron-builder --win dir",
     "smoke:dom": "node scripts/dom-smoke.js --panel",
-    "smoke:dom:read": "node scripts/dom-smoke.js"
+    "smoke:dom:read": "node scripts/dom-smoke.js",
+    "snapshot:dom": "node scripts/snapshot-dom.js"
   },
   "devDependencies": {
     "electron": "^45.3.4",
