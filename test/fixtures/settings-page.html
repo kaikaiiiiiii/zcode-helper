@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>settings page</title>
+<style>
+  html, body { margin: 0; padding: 0; width: 1200px; font: 14px/1.4 -apple-system, "Segoe UI", sans-serif; }
+  aside { display: block; width: 260px; height: 600px; float: left; }
+  [data-testid="settings-back-button"] { display: inline-flex; align-items: center; height: 32px; padding: 0 10px; margin: 16px; }
+  main { display: block; padding: 16px; }
+</style></head>
+<body>
+  <aside>
+    <button data-slot="tooltip-trigger" data-variant="ghost" data-size="lg" type="button" data-testid="settings-back-button" aria-label="返回工作区">返回工作区</button>
+    <div>搜索设置</div>
+    <div>基础设置</div>
+    <div>模型设置</div>
+  </aside>
+  <main><h1>模型设置</h1><div>这里是模型设置页（fixture 占位）</div></main>
+</body></html>

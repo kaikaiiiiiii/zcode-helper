@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>model panel with providers</title>
+<style>
+  html, body { margin: 0; padding: 0; width: 1200px; font: 14px/1.4 -apple-system, "Segoe UI", sans-serif; }
+  button { display: inline-flex; align-items: center; height: 28px; padding: 0 8px; }
+  [role="menu"] { display: block; position: absolute; width: 260px; background: #fff; border: 1px solid #ddd; padding: 4px; }
+  [role="menuitem"], [role="menuitemradio"] { display: flex; align-items: center; height: 30px; padding: 0 8px; }
+  #menu-main { left: 600px; top: 200px; }
+  #menu-provider { left: 870px; top: 200px; }
+</style></head>
+<body>
+  <!-- 输入框行里的模型触发器 -->
+  <div id="composer">
+    <button type="button" data-testid="chat-model-select-trigger" data-model-current-value="custom:opencode-go-chat:glm-5.3-flash" aria-label="glm-5.3-flash 最高" aria-haspopup="menu" aria-expanded="true" data-state="open"><span><span>glm-5.3-flash</span></span><span>最高</span></button>
+  </div>
+
+  <!-- 一级面板：供应商触发器 + 模型列表 + 思考强度 -->
+  <div role="menu" id="menu-main">
+    <div role="menuitem" data-testid="composer-provider-trigger">OpenCode Go (Chat) API</div>
+    <div role="menuitemradio" data-testid="chat-model-select-item-custom:opencode-go-chat:minimax-m3.1-flash" aria-checked="false">minimax-m3.1-flash 视觉</div>
+    <div role="menuitemradio" data-testid="chat-model-select-item-custom:opencode-go-chat:glm-5.3-flash" aria-checked="true">glm-5.3-flash 视觉</div>
+    <div role="menuitemradio" data-testid="chat-model-select-item-custom:opencode-go-chat:kimi-k3" aria-checked="false" aria-disabled="true">kimi-k3 视觉</div>
+    <div role="menuitem">思考强度 最高 Ctrl+T</div>
+  </div>
+
+  <!-- 二级面板：供应商列表 + 管理模型 -->
+  <div role="menu" id="menu-provider">
+    <div role="menuitemradio" data-testid="chat-model-select-group-registry-provider:opencode-go-chat" aria-checked="true">OpenCode Go (Chat) API</div>
+    <div role="menuitemradio" data-testid="chat-model-select-group-registry-provider:deepseek" aria-checked="false">DeepSeek API</div>
+    <div role="menuitem">管理模型</div>
+  </div>
+</body></html>

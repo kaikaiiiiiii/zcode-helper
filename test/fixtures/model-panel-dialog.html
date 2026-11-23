@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>model panel (3.19.1 popover)</title>
+<style>
+  html, body { margin: 0; padding: 0; width: 1200px; font: 14px/1.4 -apple-system, "Segoe UI", sans-serif; }
+  button { display: inline-flex; align-items: center; height: 28px; padding: 0 8px; }
+  [data-testid="composer-model-panel"], [data-testid="composer-provider-panel"] {
+    display: block; position: absolute; width: 260px; background: #fff; border: 1px solid #ddd; padding: 4px;
+  }
+  [data-testid="composer-model-panel"] { left: 600px; top: 200px; }
+  [data-testid="composer-provider-panel"] { left: 870px; top: 200px; }
+  button[role="option"] { display: flex; align-items: center; height: 30px; padding: 0 8px; }
+</style></head>
+<body>
+  <div id="composer">
+    <button type="button" data-testid="chat-model-select-trigger" data-model-current-value="custom:opencode-go-chat:glm-5.3-flash" aria-haspopup="dialog" aria-expanded="true" data-state="open"><span><span>glm-5.3-flash</span></span><span>最高</span></button>
+  </div>
+
+  <!-- 3.19.1：一级面板是 popover dialog -->
+  <div role="dialog" data-testid="composer-model-panel" data-state="open">
+    <button type="button" data-testid="composer-provider-trigger" data-state="closed">OpenCode Go (Chat) API</button>
+    <button type="button" role="option" data-testid="chat-model-select-item-custom:opencode-go-chat:minimax-m3.1-flash" aria-selected="false">minimax-m3.1-flash 视觉</button>
+    <button type="button" role="option" data-testid="chat-model-select-item-custom:opencode-go-chat:glm-5.3-flash" aria-selected="true">glm-5.3-flash 视觉</button>
+    <button type="button" role="option" data-testid="chat-model-select-item-custom:opencode-go-chat:kimi-k3" aria-selected="false" aria-disabled="true">kimi-k3 视觉</button>
+    <div>思考强度 最高 Ctrl+T</div>
+  </div>
+
+  <!-- 3.19.1：二级面板也是 popover dialog，供应商是 button[role=option]，「管理模型」是无 testid 的 button -->
+  <div role="dialog" data-testid="composer-provider-panel" data-state="open">
+    <button type="button" role="option" data-testid="chat-model-select-group-registry-provider:opencode-go-chat" aria-selected="true">OpenCode Go (Chat) API</button>
+    <button type="button" role="option" data-testid="chat-model-select-group-registry-provider:deepseek" aria-selected="false">DeepSeek API</button>
+    <button type="button">管理模型</button>
+  </div>
+</body></html>

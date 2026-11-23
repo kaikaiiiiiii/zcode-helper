@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>chat loading</title>
+<style>
+  html, body { margin: 0; padding: 0; width: 1200px; font: 14px/1.4 -apple-system, "Segoe UI", sans-serif; }
+  [contenteditable="true"], [contenteditable=""], textarea { display: block; min-height: 64px; width: 640px; border: 1px solid #ccc; padding: 6px; }
+  button { display: inline-flex; align-items: center; height: 28px; padding: 0 8px; }
+  [role="option"] { display: block; height: 32px; }
+  li { display: block; height: 32px; }
+  ul { margin: 0; padding: 0; list-style: none; }
+</style></head>
+<body>
+<div id="conversation" class="relative flex h-full min-h-0 flex-col">
+  <div data-zcode-chat-loading-slot="true" class="min-h-5">
+    <div role="status" aria-label="加载中..." data-zcode-chat-loading-animate="true" data-testid="chat-loading"
+         class="inline-flex w-fit items-center gap-2">
+      <span data-chat-loading-icon="true" class="flex size-4 shrink-0 items-center justify-center"><svg viewBox="0 0 20 20" class="size-5"></svg></span>
+      <span class="animated-gradient-text text-ui-base">工作中</span>
+      <span aria-hidden="true" class="font-mono text-ui-caption tabular-nums text-foreground-subtle">1 分 23 秒</span>
+    </div>
+  </div>
+</div></body></html>

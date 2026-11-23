@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>设置 — ZCode Helper</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="settings">
+    <div class="field">
+      <label>ZCode 可执行文件路径（留空自动查找）</label>
+      <div class="row">
+        <input type="text" id="zcodeExePath" />
+        <button id="browseExe">浏览…</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>默认工作区目录（ZCode Helper 拉起 ZCode 时打开；留空不带参数）</label>
+      <div class="row">
+        <input type="text" id="defaultWorkspacePath" />
+        <button id="browseWs">浏览…</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="row">
+        <div class="field half">
+          <label>允许同时进行的会话数：</label>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" id="maxWorkingSessions" />
+        </div>
+      </div>
+      <div class="hint">会话繁忙或模型不可用时 ZCode 助手会暂存消息，等有空位再发送。</div>
+    </div>
+
+    <div class="field">
+      <div class="row">
+        <div class="field half">
+          <label>防打扰：</label>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" id="idleGuardSeconds" />
+        </div>
+      </div>
+      <div class="hint">当用户键盘鼠标无信号后 n 秒，helper 才开始工作</div>
+    </div>
+
+    <div class="field">
+      <div class="row">
+        <div class="field half">
+          <label>模型列表刷新周期（秒）：</label>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" id="modelRefreshSeconds" />
+        </div>
+      </div>
+      <div class="hint">模型不可用时，按这个周期点「管理模型」进模型设置页再「返回工作区」，让 ZCode 重新拉取可用模型列表；0 = 关闭。你正在操作键盘鼠标时不会刷新。</div>
+    </div>
+
+    <div class="field">
+      <label>允许助手使用的模型：</label>
+      <input type="text" id="fixedModelId" />
+      <div class="hint">半角逗号分隔的字符串。</div>
+    </div>
+
+    <div class="field">
+      <div class="row">
+        <div class="field half">
+          <label>已发送条目保留天数（滚动归档）</label>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" id="queueArchiveDays" />
+        </div>
+      </div>
+    </div>
+
+    <div class="checks">
+      <label><input type="checkbox" id="autoLaunchZCode" /> ZCode Helper 启动时自动拉起 ZCode</label>
+      <label><input type="checkbox" id="panelAlwaysOnTop" /> 面板窗口置顶</label>
+      <label><input type="checkbox" id="showOutputSwitch" /> 主面板显示消息输出阻断开关</label>
+    </div>
+
+    <div class="hint">
+      队列与日志存放于 %APPDATA%\ZCode Helper\。保存后：端口/时段立即生效；
+      ZCode 路径/默认工作区在下次启动或受控重启时生效。
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="btnSave">保存</button>
+      <button id="btnCancel">取消</button>
+      <button id="btnExport">导出诊断包</button>
+      <span class="hint" id="saveHint"></span>
+    </div>
+  </div>
+  <script src="settings.js"></script>
+</body>
+</html>

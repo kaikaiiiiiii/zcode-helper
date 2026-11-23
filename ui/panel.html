@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>ZCode Helper</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="panel">
+    <div class="header">
+      <div class="status-wrap">
+        <span class="dot" id="dot"></span>
+        <span class="status-label" id="statusLabel">…</span>
+      </div>
+      <div class="header-right">
+        <span class="sw-wrap" id="swOutputWrap">
+          <span class="sw-label">消息阻断</span>
+          <button id="swOutput" class="switch" role="switch" aria-checked="false"><span class="knob"></span></button>
+        </span>
+        <span class="badge" id="connBadge">…</span>
+      </div>
+    </div>
+
+    <div class="banner" id="banner">
+      ZCode 未受控（CDP 连接不可用）。确认正在运行的对话任务已完结后，点击下方按钮重启受控 ZCode。
+    </div>
+
+    <div class="btns">
+      <button id="btnHelper">暂停助手</button>
+      <button id="btnSettings">设置</button>
+      <button id="btnQueue">查看队列(0)</button>
+      <button class="danger" id="btnRestart">重启受控 ZCode</button>
+    </div>
+
+    <div class="events" id="events"></div>
+  </div>
+  <script src="panel.js"></script>
+</body>
+</html>

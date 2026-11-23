@@ -1,0 +1,66 @@
+{
+  "name": "zcode-helper",
+  "version": "0.5.34",
+  "description": "ZCode 排队助手：模型不可用或并发已满时排队，恢复后通过 CDP 自动送达正确的会话",
+  "main": "main.js",
+  "author": "ZCode Helper contributors",
+  "license": "MIT",
+  "keywords": [
+    "zcode",
+    "electron",
+    "cdp",
+    "queue",
+    "automation",
+    "windows"
+  ],
+  "scripts": {
+    "start": "electron .",
+    "smoke": "electron . --smoke",
+    "test": "npm run test:unit && npm run test:dom",
+    "test:unit": "node --test test/unit",
+    "test:dom": "node test/dom/launch.js",
+    "gen:icons": "node scripts/gen-icon.js",
+    "gen:fixtures": "node scripts/build-fixtures.js",
+    "build": "electron-builder --win",
+    "build:dir": "electron-builder --win dir",
+    "smoke:dom": "node scripts/dom-smoke.js --panel",
+    "smoke:dom:read": "node scripts/dom-smoke.js"
+  },
+  "devDependencies": {
+    "electron": "^45.3.4",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "com.zcode.helper",
+    "productName": "ZCode Helper",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "ui/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "assets/icon.png",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "artifactName": "ZCode-Helper-Setup-${version}-${arch}.${ext}"
+    },
+    "portable": {
+      "artifactName": "ZCode-Helper-Portable-${version}-${arch}.${ext}"
+    },
+    "executableName": "ZCodeHelper"
+  }
+}

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>sidebar-projects</title>
+</head>
+<body>
+  <div id="sidebar">
+    <section data-project-id="p-hideblog" data-project-name="hide-blog" data-state="closed"><div data-testid="virtual-project-row"><span><button data-testid="virtual-project-toggle" aria-expanded="false">hide-blog</button></span></div><div data-testid="virtual-project-tasks"></div></section>
+    <section data-project-id="p-bighub" data-project-name="Bighub" data-state="open"><div data-testid="virtual-project-row"><span><button data-testid="virtual-project-toggle" aria-expanded="true">Bighub</button></span></div><div data-testid="virtual-project-tasks"><ul><li data-testid="task-item-sess_target" data-task-item-key="D:\Coding\Bighub:sess_target"><div class="relative flex size-4 shrink-0 items-center justify-center"><span aria-hidden="true" class="flex size-4 items-center justify-center transition-opacity"></span></div><span data-task-title-copy="original">示例对话</span></li></ul></div></section>
+  </div>
+  <script>
+    // 模拟 ZCode：点项目头切换 aria-expanded（真实行为里会话 li 会从 DOM 移除，这里只验证展开动作）
+    document.querySelectorAll('button[data-testid="virtual-project-toggle"]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        b.setAttribute('aria-expanded', b.getAttribute('aria-expanded') === 'true' ? 'false' : 'true');
+      });
+    });
+  </script>
+</body>
+</html>

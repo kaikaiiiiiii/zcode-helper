@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>队列 — ZCode Helper</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="queue-page">
+    <div class="toolbar">
+      <div class="filters">
+        <button data-f="all" class="on">全部</button>
+        <button data-f="pending">待发送</button>
+        <button data-f="draft">草稿</button>
+        <button data-f="sent">已发送</button>
+        <button data-f="failed">失败</button>
+      </div>
+      <span class="spacer"></span>
+      <button id="btnResetFailed">失败全部重发</button>
+      <button id="btnClearSent">清空已发送</button>
+      <button id="btnExport">导出诊断包</button>
+    </div>
+    <div class="qtable" id="list"><div class="empty">加载中…</div></div>
+  </div>
+  <script src="queue.js"></script>
+</body>
+</html>
