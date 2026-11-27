@@ -1,3 +1,37 @@
+## 轮次 38：误注入事故 + 套餐探针（2026-11-28 01:35，v0.5.36）
+
+### A. 事故：灯条被注入到用户自己的另一个 Electron 应用（驿传 yichuan）
+
+原因：启动探测是"9222~9231 上**有页面就接管**"，`pickMainTarget` 只挑 index.html。
+用户开发的应用同样以 `--remote-debugging-port=9222` 启动 → 被当成 ZCode 接管并注入灯条。
+
+修复（双保险）：
+1. `cdp-client` 新增 `isZCodeTarget` / `pickZCodeTarget`：只认 URL/标题含 zcode 或
+   `app.asar/out/renderer` 的页面；挑不到返回 **null，绝不回落到任意页面**。
+2. `_startupConnect` 遇到"端口被占但页面不是 ZCode" → 记 `skip-foreign-cdp`，换下一个端口；
+   连上之后 `_onConnected` **再验一次身份**（DOM 有 v4-composer / window.zcode / URL 含 zcode），
+   不是 ZCode 就调 `window.__zfhTeardown()` 撤灯条、断开、置 UNCONTROLLED。
+3. `bootstrap` 新增 `ZFH.teardown()` 与 `ZFH.disabled` 守卫：撤灯条、摘 keydown/click 监听，
+   之后所有钩子空转（避免在别人应用里拦回车）。
+4. 实测：起一个假 Electron（title=yichuan-fake）占 9222 → helper 打 `skip-foreign-cdp`，
+   9222 页面 `injected:false / bar:false`；随后在 9224 找到真 ZCode 并正常注入。
+
+### B. 套餐探针（从 zcode-switch 学来的接口判断）
+
+新增 `src/plan-probe.js`：读 `~/.zcode/v2/config.json` 的明文 JWT apiKey + `telemetry-state.json` 的
+deviceMid，调 `https://zcode.z.ai/api/v1/zcode-plan/billing/balance?app_version=…`，解析
+`plans[].status/starts_at/ends_at/entitlements[].effective_at`。
+
+- 配置项 `planProbeSeconds`（默认 **180**，0=关）；独立计时器，**不依赖 CDP**（ZCode 没开端口也能查）；
+- 失败完全静默，DOM 两层判断继续兜底；只有状态变化才写日志；
+- 到点（effective_at 已过）→ 放开模型冷却，并在"有积压 + 用户空闲"时刷新一次模型列表；
+- 灯条：套餐未生效时标题显示「无可用模型 · HH:MM 生效」；
+- 坑一：缺 `X-Device-Mid` → 400 code 3001；坑二：32 字节普通 key 调 billing 会 **401**，
+  必须优先挑 `eyJ…` 的 JWT（findApiKey 按 start-plan/JWT/enabled 打分）。
+- 实测：`plan-state ZCODE WEEKEND BUILD available=true` → `plan-effective` 触发。
+
+测试：单元 74（新增 plan-probe 10 条 + target-guard 3 条）、DOM 76（新增灯条生效时间 2 条）。
+
 ## 轮次 37：ZCode 4.0.0 升级检查（2026-11-24 00:50）
 
 3.19.1 → **4.0.0.10870**（更新器自动下载安装；3.19.1 的 exe 在待更新期间已无法启动，所以没能补存 3.19 全量快照）。

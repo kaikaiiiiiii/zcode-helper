@@ -472,6 +472,7 @@ function bootstrapSource(version) {
     // 清空交给 helper 用 CDP 真实按键做（页面内 execCommand 对 Lexical 无效，实测内容会留着）
   }
   function onKeyDown(e) {
+    if (ZFH.disabled) return;
     if (ZFH.mode !== 'recording') return;
     if (isInjected()) return;
     if (e.key !== 'Enter' || e.shiftKey) return;
@@ -491,6 +492,7 @@ function bootstrapSource(version) {
     interceptSubmit('enter');
   }
   function onClickCapture(e) {
+    if (ZFH.disabled) return;
     if (ZFH.mode !== 'recording') return;
     if (isInjected()) return;
     var btn = findSendButton();
@@ -506,6 +508,15 @@ function bootstrapSource(version) {
   }
   window.addEventListener('keydown', onKeyDown, true);
   window.addEventListener('click', onClickCapture, true);
+
+  /** 误注入到别的应用时用：撤掉灯条、摘掉监听，之后所有钩子都是空操作 */
+  ZFH.teardown = function () {
+    ZFH.disabled = true;
+    try { window.removeEventListener('keydown', onKeyDown, true); } catch (e) {}
+    try { window.removeEventListener('click', onClickCapture, true); } catch (e) {}
+    try { var el = document.getElementById('zfh-lightbar'); if (el) el.remove(); } catch (e) {}
+  };
+  window.__zfhTeardown = ZFH.teardown;
 
   // ---------- 快照读取（helper 周期调用；变化判定在 helper 侧） ----------
   function snapshot() {
@@ -806,6 +817,7 @@ function bootstrapSource(version) {
   }
 
   ZFH.setLightBar = function (p) {
+    if (ZFH.disabled) return;
     p = p || {};
     ZFH.capacity = {
       modelOk: p.modelOk,
@@ -818,6 +830,12 @@ function bootstrapSource(version) {
     // 灯条只存在于受控（CDP 已连接）时：未连接 = 不存在，没有"未受控"灰色状态
     var st = p.state || (p.helperPaused ? 'helper-paused' : (p.outputPaused ? 'output-paused' : ((p.working || 0) >= (p.limit || 2) ? 'wait' : 'ok')));
     var stateText = (st === 'wait' && p.waitReason === 'model') ? '无可用模型' : (LB_TEXT[st] || '助手工作中');
+    // 套餐已领取但未到生效时间：直接显示几点生效（来自官方接口的 effective_at）
+    if (st === 'wait' && p.waitReason === 'model' && p.planEta > 0) {
+      var eta = new Date(Date.now() + p.planEta * 1000);
+      var hhmm = ('0' + eta.getHours()).slice(-2) + ':' + ('0' + eta.getMinutes()).slice(-2);
+      stateText = '无可用模型 · ' + hhmm + ' 生效';
+    }
     el.querySelector('.lb-dot').style.background = LB_COLOR[st] || LB.paused;
     el.querySelector('.lb-state').textContent = stateText;
     var w = p.working || 0, limit = p.limit || 2;

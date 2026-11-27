@@ -33,6 +33,27 @@ async function listPageTargets(port) {
   return targets.filter(t => t.type === 'page' && t.webSocketDebuggerUrl);
 }
 
+/**
+ * 这个 target 是不是 ZCode？——只看 URL / 标题。
+ * 场景：9222 端口可能被别的 Electron 应用占用（它们也开 index.html），绝不能往人家页面里注入。
+ */
+function isZCodeTarget(t) {
+  if (!t) return false;
+  const url = String(t.url || '').toLowerCase();
+  const title = String(t.title || '').toLowerCase();
+  if (url.includes('zcode') || title.includes('zcode')) return true;
+  // ZCode 4.x：file:///…/apps/zcode/<ver>/resources/app.asar/out/renderer/index.html
+  return url.includes('app.asar/out/renderer');
+}
+
+/** 只挑 ZCode 的页面；一个都没有就返回 null（绝不回落到"随便哪个页面"） */
+function pickZCodeTarget(targets) {
+  const pages = (targets || []).filter(t => t && (!t.type || t.type === 'page'));
+  const zcode = pages.filter(isZCodeTarget);
+  if (!zcode.length) return null;
+  return zcode.find(t => String(t.url || '').includes('index.html')) || zcode[0];
+}
+
 /** 挑主窗口 target：优先 file://…/index.html（ZCode 桌面端加载形态），否则第一个 page */
 function pickMainTarget(pageTargets) {
   const idx = pageTargets.findIndex(t => (t.url || '').includes('index.html'));
@@ -239,4 +260,4 @@ class CdpClient extends EventEmitter {
   }
 }
 
-module.exports = { CdpClient, listPageTargets, pickMainTarget, httpGetJson };
+module.exports = { CdpClient, listPageTargets, pickMainTarget, pickZCodeTarget, isZCodeTarget, httpGetJson };

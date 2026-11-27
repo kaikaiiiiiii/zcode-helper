@@ -1,6 +1,6 @@
 {
   "name": "zcode-helper",
-  "version": "0.5.34",
+  "version": "0.5.36",
   "description": "ZCode 排队助手：模型不可用或并发已满时排队，恢复后通过 CDP 自动送达正确的会话",
   "main": "main.js",
   "author": "ZCode Helper contributors",

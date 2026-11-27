@@ -30,6 +30,8 @@ const DEFAULTS = {
   idleGuardSeconds: 5,
   // 模型记录为"不可用"时，每隔多少秒刷新一次模型列表（点 管理模型 → 模型设置 → 返回工作区）；0 = 关闭
   modelRefreshSeconds: 60,
+  // 套餐状态检查周期（秒）：直接问官方接口，判断"模型何时可用"；0 = 关闭。要比 ZCode 自己的周期长
+  planProbeSeconds: 180,
   // 上次匹配成功的最佳模型（供应商 + 模型名）；发消息时先试它，失效再重新扫描
   modelBestMatch: null,
   // 暂停助手（暂停记录）：true = 滤网不拦截，消息直接放行给 ZCode（面板/托盘切换）
@@ -91,6 +93,8 @@ class Config {
           merged[k] = clampInt(v, 0, 60, merged[k]);
         } else if (k === 'modelRefreshSeconds' || k === 'modelRecoverCheckSeconds') {
           merged[k === 'modelRecoverCheckSeconds' ? 'modelRefreshSeconds' : k] = clampInt(v, 0, 3600, merged.modelRefreshSeconds || 60);
+        } else if (k === 'planProbeSeconds') {
+          merged[k] = clampInt(v, 0, 3600, merged.planProbeSeconds !== undefined ? merged.planProbeSeconds : 180);
         } else if (k === 'queueArchiveDays') {
           merged[k] = clampInt(v, 1, 365, merged[k]);
         } else if (k === 'modelBestMatch') {
@@ -136,6 +140,8 @@ class Config {
         next[k] = clampInt(v, 0, 60, next[k]);
       } else if (k === 'modelRefreshSeconds' || k === 'modelRecoverCheckSeconds') {
         next[k === 'modelRecoverCheckSeconds' ? 'modelRefreshSeconds' : k] = clampInt(v, 0, 3600, next[k] !== undefined ? next[k] : 60);
+      } else if (k === 'planProbeSeconds') {
+        next[k] = clampInt(v, 0, 3600, next[k] !== undefined ? next[k] : 180);
       } else if (k === 'queueArchiveDays') {
         next[k] = clampInt(v, 1, 365, next[k]);
       } else if (k === 'modelBestMatch') {

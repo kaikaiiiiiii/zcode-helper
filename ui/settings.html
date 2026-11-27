@@ -51,6 +51,11 @@
         </div>
       </div>
       <div class="hint">模型不可用时，按这个周期点「管理模型」进模型设置页再「返回工作区」，让 ZCode 重新拉取可用模型列表；0 = 关闭。你正在操作键盘鼠标时不会刷新。</div>
+      <div class="field">
+        <label>套餐状态检查周期（秒）：</label>
+        <input type="text" inputmode="numeric" pattern="[0-9]*" id="planProbeSeconds" />
+      </div>
+      <div class="hint">直接问官方接口「套餐什么时候生效、是否已生效」，不点界面、不打扰你；到点会自动刷新一次模型列表。0 = 关闭（默认 180，应大于 ZCode 自身周期）。</div>
     </div>
 
     <div class="field">

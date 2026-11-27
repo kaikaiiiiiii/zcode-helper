@@ -1,7 +1,7 @@
 'use strict';
 /* settings.js — 设置窗口（DESIGN.md §6 config.json 字段的全量暴露） */
 
-const FIELDS = ['zcodeExePath', 'defaultWorkspacePath', 'maxWorkingSessions', 'idleGuardSeconds', 'modelRefreshSeconds', 'queueArchiveDays', 'fixedModelId'];
+const FIELDS = ['zcodeExePath', 'defaultWorkspacePath', 'maxWorkingSessions', 'idleGuardSeconds', 'modelRefreshSeconds', 'planProbeSeconds', 'queueArchiveDays', 'fixedModelId'];
 const CHECKS = ['autoLaunchZCode', 'panelAlwaysOnTop', 'showOutputSwitch'];
 
 function $(id) { return document.getElementById(id); }
@@ -15,7 +15,7 @@ async function load() {
 async function save() {
   const patch = {};
   for (const f of FIELDS) {
-    if (f === 'maxWorkingSessions' || f === 'idleGuardSeconds' || f === 'modelRefreshSeconds' || f === 'queueArchiveDays') {
+    if (f === 'maxWorkingSessions' || f === 'idleGuardSeconds' || f === 'modelRefreshSeconds' || f === 'planProbeSeconds' || f === 'queueArchiveDays') {
       patch[f] = Number(String($(f).value).replace(/[^0-9]/g, '')) || undefined;
     } else if (f === 'fixedModelId') {
       // 模型可用性检测：半角逗号分隔，保存时统一成 ", " 分隔

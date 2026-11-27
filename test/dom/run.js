@@ -70,6 +70,15 @@ async function main() {
     check('灯条：capacity 回写给滤网', lb && lb.cap && lb.cap.modelOk === true && lb.cap.working === 2 && lb.cap.limit === 2, lb && lb.cap);
   }
   {
+    // 套餐已领取但未到生效时间：灯条直接显示几点生效（planEta 来自官方接口）
+    await js(adapter.setLightBarSrc({ conn: 'on', state: 'wait', waitReason: 'model', modelOk: false, working: 0, limit: 2, pending: 2, planEta: 3600 }));
+    const withEta = await js("document.querySelector('#zfh-lightbar .lb-state').textContent");
+    check('灯条：套餐未生效时显示「HH:MM 生效」', /^无可用模型 · \d{2}:\d{2} 生效$/.test(withEta), withEta);
+    await js(adapter.setLightBarSrc({ conn: 'on', state: 'wait', waitReason: 'model', modelOk: false, working: 0, limit: 2, pending: 2 }));
+    const withoutEta = await js("document.querySelector('#zfh-lightbar .lb-state').textContent");
+    check('灯条：没有生效时间时只显示「无可用模型」', withoutEta === '无可用模型', withoutEta);
+  }
+  {
     // 灯色：绿=正常输出，黄=等待名额，红=输出暂停，灰=助手暂停
     const color = async (payload) => {
       await js(adapter.setLightBarSrc(payload));

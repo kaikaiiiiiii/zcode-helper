@@ -9,7 +9,7 @@ const { execFile } = require('child_process');
 const { Config } = require('./config');
 const { Logger } = require('./logger');
 const { Queue, STATUS } = require('./queue');
-const { CdpClient, listPageTargets, pickMainTarget } = require('./cdp-client');
+const { CdpClient, listPageTargets, pickMainTarget, pickZCodeTarget } = require('./cdp-client');
 const { Supervisor, isPortFree, isPortOpen } = require('./supervisor');
 const { StateMachine, CONN } = require('./state-machine');
 const { Player, samePath } = require('./player');
@@ -17,6 +17,7 @@ const { Interceptor } = require('./interceptor');
 const { Indicator } = require('./indicator');
 const adapter = require('./dom-adapter');
 const { detectZCodePath } = require('./zcode-path');
+const { probePlan } = require('./plan-probe');
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -54,6 +55,11 @@ class Engine extends EventEmitter {
     this._idleNoteAt = 0;                         // 防打扰提示限流
     this._modelMenuAt = 0;
     this._modelRefreshAt = 0;
+    this.planState = null;            // 最近一次套餐探针结果（null = 还没查过/查不到）
+    this._planProbeAt = 0;
+    this._planProbeBusy = false;
+    this._planTimer = null;
+    this._planRefreshArmed = true;    // 到点后只自动刷一次模型列表
     this._modelHoldUntil = 0;         // 模型不可用时的排空冷却（到点才允许再试）
     this._refreshing = false;         // 刷新列表进行中（防重入）
     this._helperOpenedSettings = false; // 模型设置页是否由 helper 打开（成对返回用）
@@ -112,6 +118,7 @@ class Engine extends EventEmitter {
 
   async start() {
     this.logger.log('app', { action: 'start', version: adapter.helperVersion, smoke: this.smoke, userData: this.userDataDir });
+    this._startPlanProbe();
     await this._startupConnect();
     this._broadcast();
   }
@@ -142,12 +149,17 @@ class Engine extends EventEmitter {
       const ok = await isPortOpen(p, '127.0.0.1', 500);
       if (!ok) continue;
       const targets = await listPageTargets(p).catch(() => null);
-      if (targets && targets.length) {
-        this.sessionPort = p;
-        this.logger.log('cdp', { action: 'adopt-existing', port: p });
-        this._connectLoop();
-        return;
+      if (!targets || !targets.length) continue;
+      const zt = pickZCodeTarget(targets);
+      if (!zt) {
+        // 端口被别的 Electron 应用占着（例如自己开发的应用开了 remote debugging）→ 绝不接管
+        this.logger.log('cdp', { action: 'skip-foreign-cdp', port: p, urls: targets.slice(0, 3).map(t => t.url) });
+        continue;
       }
+      this.sessionPort = p;
+      this.logger.log('cdp', { action: 'adopt-existing', port: p, url: zt.url });
+      this._connectLoop();
+      return;
     }
     // 2) ZCode 在跑但无 CDP → 未受控（面板提示 + 重启按钮，绝不静默拉起第二个实例）
     const zcodeRunning = await tasklistHas('ZCode.exe');
@@ -193,7 +205,7 @@ class Engine extends EventEmitter {
         attempts++;
         try {
           const targets = await listPageTargets(this.sessionPort);
-          const target = pickMainTarget(targets);
+          const target = pickZCodeTarget(targets);
           if (target) {
             await this.cdp.connect(target);
             await this._onConnected();
@@ -214,6 +226,26 @@ class Engine extends EventEmitter {
   async _onConnected() {
     const target = this.cdp.target;
     this.logger.log('cdp', { action: 'connected', port: this.sessionPort, url: target && target.url, title: target && target.title });
+    // 双保险：URL 白名单之外，进页面再验一次身份（端口可能被别的 Electron 应用接手）
+    let ident = null;
+    try {
+      ident = await this.cdp.evaluate(`(() => ({
+        url: location.href,
+        title: document.title,
+        hasComposer: !!document.querySelector('[data-testid="v4-composer"],[data-testid="chat-model-select-trigger"],[data-testid="chat-attachment-button"]'),
+        hasZcode: typeof window.zcode !== 'undefined'
+      }))()`, 3000);
+    } catch { ident = null; }
+    const looksZCode = !!(ident && (ident.hasComposer || ident.hasZcode
+      || /zcode/i.test(String(ident.url || '')) || /zcode/i.test(String(ident.title || ''))));
+    if (!looksZCode) {
+      this.logger.log('cdp', { action: 'target-rejected', url: ident && ident.url, title: ident && ident.title });
+      // 之前可能已经注入过灯条/监听 → 能撤就撤，绝不留在别人应用里
+      try { await this.cdp.evaluate('window.__zfhTeardown ? (window.__zfhTeardown(), "torn-down") : "none"', 2000); } catch { /* ignore */ }
+      try { this.cdp.close('foreign-target'); } catch { /* ignore */ }
+      this.stateMachine.setConnection(CONN.UNCONTROLLED, 'foreign-target');
+      return;
+    }
     this.stateMachine.setConnection(CONN.CONNECTED, 'cdp-connected');
     try {
       await this.cdp.enableDomains();
@@ -244,7 +276,7 @@ class Engine extends EventEmitter {
     this.logger.log('cdp', { action: 'workspace-switch', workspacePath });
     try {
       const targets = await listPageTargets(this.sessionPort);
-      const target = pickMainTarget(targets);
+      const target = pickZCodeTarget(targets);
       if (target && (!this.cdp.target || target.webSocketDebuggerUrl !== this.cdp.target.webSocketDebuggerUrl)) {
         await this.cdp.connect(target);
         await this._onConnected();
@@ -298,6 +330,79 @@ class Engine extends EventEmitter {
 
   _stopProbe() {
     if (this._probeTimer) { clearInterval(this._probeTimer); this._probeTimer = null; }
+  }
+
+  /** 套餐探针独立计时器：不跟 CDP 探针绑在一起（ZCode 没开调试端口时也要能判断"何时生效"） */
+  _startPlanProbe() {
+    this._stopPlanProbe();
+    this._planTimer = setInterval(() => { this._maybeProbePlan().catch(() => {}); }, 5000);
+    setImmediate(() => { this._maybeProbePlan().catch(() => {}); });
+  }
+
+  _stopPlanProbe() {
+    if (this._planTimer) { clearInterval(this._planTimer); this._planTimer = null; }
+  }
+
+  /** 套餐权益还剩多少秒生效（已生效/无套餐 → null） */
+  _planEtaSeconds() {
+    const st = this.planState;
+    if (!st || !st.ok || !st.active || !st.effectiveAt) return null;
+    const now = Math.floor(Date.now() / 1000);
+    return st.effectiveAt > now ? st.effectiveAt - now : null;
+  }
+
+  /** 权益到点：放开模型冷却，必要时立刻刷新一次模型列表 */
+  async _onPlanEffective(why) {
+    this._modelHoldUntil = 0;
+    this.logger.log('probe', { action: 'plan-effective', why, plan: this.planState && this.planState.name });
+    if (this.modelState === 'None' && this.queue.pendingSubmits().length && !this._userActive()) {
+      const r = await this._refreshModelList().catch(() => null);
+      const still = !r || !r.after || String(r.after.text || '').indexOf('管理模型') >= 0;
+      if (still) this._holdModel('no-list');
+      else this._modelHoldUntil = 0;
+    }
+  }
+
+  /**
+   * 套餐探针（纯 HTTP，不点界面）：
+   *  - 每 planProbeSeconds 秒问一次官方接口，只判断"套餐是否生效/何时生效"；
+   *  - 失败完全静默，由 DOM 两层判断继续兜底；
+   *  - 到点（effective_at）后主动放开模型冷却并刷新一次列表。
+   */
+  async _maybeProbePlan() {
+    const st0 = this.planState;
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (st0 && st0.ok && st0.active && st0.effectiveAt && nowSec >= st0.effectiveAt && !st0.effectiveHit) {
+      st0.effectiveHit = true;
+      await this._onPlanEffective('local-timer');
+    }
+    const n = Number(this.config.get('planProbeSeconds'));
+    if (!n || n <= 0) return;
+    if (this._planProbeBusy) return;
+    if (Date.now() - this._planProbeAt < n * 1000) return;
+    this._planProbeAt = Date.now();
+    this._planProbeBusy = true;
+    try {
+      const st = await probePlan({});
+      if (!st || !st.ok) return;   // 静默
+      const prev = this.planState;
+      st.effectiveHit = !!(prev && prev.effectiveHit && prev.effectiveAt === st.effectiveAt);
+      this.planState = st;
+      if (!prev || prev.name !== st.name || prev.available !== st.available || prev.effectiveAt !== st.effectiveAt) {
+        this.logger.log('probe', {
+          action: 'plan-state', plan: st.name, status: st.status,
+          available: st.available, effectiveAt: st.effectiveAt, endsAt: st.endsAt
+        });
+      }
+      if (st.available && !st.effectiveHit) {
+        st.effectiveHit = true;
+        await this._onPlanEffective('http');
+      }
+      this._applyLightBar();
+    } finally {
+      this._planProbeBusy = false;
+    this._planTimer = null;
+    }
   }
 
   async _probeTick() {
@@ -808,6 +913,7 @@ class Engine extends EventEmitter {
       state,
       waitReason,
       currentPending: this._currentSessionPendingText(),
+      planEta: this._planEtaSeconds(),
       last: this._lastEvent
     };
   }
@@ -1074,6 +1180,7 @@ class Engine extends EventEmitter {
     this._connectActive = false;
     this.indicator.stop();
     this._stopProbe();
+    this._stopPlanProbe();
     this.cdp.close('helper-quit');
     this.supervisor.dispose();
     this.logger.log('app', { action: 'stop', note: 'helper 退出，保留 ZCode 运行' });
