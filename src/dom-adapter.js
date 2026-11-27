@@ -7,7 +7,7 @@
  */
 const { bootstrapSource } = require('./inject/bootstrap');
 
-const HELPER_VERSION = '0.5.36';
+const HELPER_VERSION = '0.6.0';
 
 module.exports = {
   bootstrapSource: () => bootstrapSource(HELPER_VERSION),
